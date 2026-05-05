@@ -1,55 +1,73 @@
 # ⚽ Football Arena
 
-## كيفية التشغيل
+**Multiplayer browser football game — control your player from your phone and watch the match live on a shared screen, supporting 1v1, 2v2, and 3v3 modes.**
 
-### المتطلبات
-- Node.js (تحميل من nodejs.org)
+---
 
-### خطوات التشغيل
+## 🚀 Deployment on Render
 
-1. افتح Terminal أو Command Prompt في مجلد اللعبة
-2. شغّل الأمر:
+1. Upload the project folder to a GitHub repository
+2. Create a new **Web Service** on [render.com](https://render.com)
+3. Connect your repository and set:
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+4. Deploy — Render handles the port and WebSocket automatically ✅
+
+Once deployed, share your Render URL with players.
+
+---
+
+## 🎮 How to Play
+
+1. Open the game URL on a **TV or PC** (the stadium screen)
+2. Choose a game mode: **1v1 · 2v2 · 3v3**
+3. A QR code appears for each team — players scan it on their **phones**
+4. Each player selects their position
+5. Press **"Start Match!"** when all players have joined
+6. Play! The match runs for 90 in-game minutes (≈ 15 real minutes)
+
+---
+
+## 📱 Controller Buttons
+
+| Button | Action |
+|--------|--------|
+| Left joystick | Move player |
+| Right joystick | Aim ball direction |
+| ⚽ SHOOT | Kick toward goal |
+| ■ PASS | Short pass |
+| 🌙 LOB | Lob pass |
+| ✕ TACKLE | Steal the ball |
+
+---
+
+## 📁 Files
+
+| File | Description |
+|------|-------------|
+| `server.js` | Node.js server with WebSocket |
+| `index.html` | Stadium screen (TV / PC) |
+| `controller.html` | Phone controller |
+| `package.json` | Dependencies (`ws`) |
+
+---
+
+## ⚙️ Run Locally
+
+**Requirements:** Node.js 18+
 
 ```bash
-node server.js
+npm install
+npm start
 ```
 
-3. ستظهر رسالة مثل:
-```
-🚀 Football Arena Server Started!
-================================
-📺 Stadium (open on TV/PC):
-   http://localhost:3000
+Then open `http://localhost:3000` on your PC and share the local IP with phone players on the same WiFi network.
 
-📱 Controllers (open on phones):
-   http://192.168.1.X:3000/controller.html
+---
 
-🌐 Local IP: 192.168.1.X
-================================
-```
+## 🔌 Tech Stack
 
-4. افتح `http://localhost:3000` على الكمبيوتر/التلفزيون
-5. اختر نمط اللعبة (1vs1, 2vs2, 3vs3)
-6. سيظهر QR code لكل فريق - امسحه بالهاتف
-7. كل لاعب يختار مركزه
-8. اضغط "ابدأ المباراة" عند اكتمال اللاعبين
-
-## الملفات
-- `server.js` - السيرفر (Node.js)
-- `index.html` - شاشة الملعب الرئيسية
-- `controller.html` - تحكم الهاتف
-
-## أزرار التحكم
-- **D-Pad** - تحريك اللاعب
-- **⚽ (O)** - تسديد / ركل الكرة
-- **■ (Square)** - تمرير
-- **✕ (X)** - تدخل / سرقة الكرة
-- **⚡ BOOST** - تسريع الجري
-
-## مدة المباراة
-- الشوط الأول: 7.5 دقيقة حقيقية (= 45 دقيقة عداد)
-- الشوط الثاني: 7.5 دقيقة حقيقية (= 45 دقيقة عداد)
-- المجموع: 15 دقيقة حقيقية (= 90 دقيقة عداد)
-
-## الشبكة
-تأكد أن الهاتف والكمبيوتر على **نفس الشبكة WiFi**
+- **Backend:** Node.js — no frameworks
+- **Realtime:** WebSocket (`ws` library) — full-duplex, low latency
+- **Frontend:** Vanilla HTML · CSS · Canvas API
+- **Hosting:** Render (WebSocket supported out of the box)
