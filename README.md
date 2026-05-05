@@ -1,2 +1,55 @@
-# FootBall-Game
-Multiplayer browser football game — control your player from your phone and watch the match live on a shared screen, supporting 1v1, 2v2, and 3v3 modes.
+# ⚽ Football Arena
+
+## كيفية التشغيل
+
+### المتطلبات
+- Node.js (تحميل من nodejs.org)
+
+### خطوات التشغيل
+
+1. افتح Terminal أو Command Prompt في مجلد اللعبة
+2. شغّل الأمر:
+
+```bash
+node server.js
+```
+
+3. ستظهر رسالة مثل:
+```
+🚀 Football Arena Server Started!
+================================
+📺 Stadium (open on TV/PC):
+   http://localhost:3000
+
+📱 Controllers (open on phones):
+   http://192.168.1.X:3000/controller.html
+
+🌐 Local IP: 192.168.1.X
+================================
+```
+
+4. افتح `http://localhost:3000` على الكمبيوتر/التلفزيون
+5. اختر نمط اللعبة (1vs1, 2vs2, 3vs3)
+6. سيظهر QR code لكل فريق - امسحه بالهاتف
+7. كل لاعب يختار مركزه
+8. اضغط "ابدأ المباراة" عند اكتمال اللاعبين
+
+## الملفات
+- `server.js` - السيرفر (Node.js)
+- `index.html` - شاشة الملعب الرئيسية
+- `controller.html` - تحكم الهاتف
+
+## أزرار التحكم
+- **D-Pad** - تحريك اللاعب
+- **⚽ (O)** - تسديد / ركل الكرة
+- **■ (Square)** - تمرير
+- **✕ (X)** - تدخل / سرقة الكرة
+- **⚡ BOOST** - تسريع الجري
+
+## مدة المباراة
+- الشوط الأول: 7.5 دقيقة حقيقية (= 45 دقيقة عداد)
+- الشوط الثاني: 7.5 دقيقة حقيقية (= 45 دقيقة عداد)
+- المجموع: 15 دقيقة حقيقية (= 90 دقيقة عداد)
+
+## الشبكة
+تأكد أن الهاتف والكمبيوتر على **نفس الشبكة WiFi**

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+<title>🎮 Controller</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #07090f;
+  font-family: 'Rajdhani', sans-serif;
+  color: #fff;
+  /* Force landscape */
+  touch-action: pan-x pan-y;
+}
+
+/* Rotate overlay for portrait users */
+.rotate-msg {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: #07090f;
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1rem; text-align: center;
+  font-size: 1.1rem; color: #9ca3af;
+}
+.rotate-msg .ico { font-size: 3.5rem; animation: rot 1.5s ease-in-out infinite alternate; }
+@keyframes rot { from{transform:rotate(-30deg)} to{transform:rotate(30deg)} }
+@media (orientation: portrait) {
+  .rotate-msg { display: flex; }
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  position: fixed; inset: 0;
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 10;
+  background: #07090f;
+}
+.screen.active { display: flex; }
+/* Controller behind all overlay screens */
+#ctrl { z-index: 1; background: transparent; }
+
+/* ===== SELECT POSITION — landscape layout ===== */
+#sel {
+  flex-direction: column;
+  padding: 12px 20px;
+  gap: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Scrollable if content taller than screen */
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 16px;
+}
+
+.sel-top { display:flex; align-items:center; gap:10px; }
+.sel-title { font-size: 1.15rem; font-weight:700; letter-spacing:1px; }
+.team-tag { font-size:.72rem; font-weight:700; padding:.2rem .75rem; border-radius:20px; border:1px solid; }
+.team-tag.blue { background:rgba(37,99,235,.15); color:#60a5fa; border-color:rgba(37,99,235,.35); }
+.team-tag.red  { background:rgba(220,38,38,.15);  color:#f87171; border-color:rgba(220,38,38,.35); }
+.sel-sub { font-size:.78rem; color:#6b7280; }
+
+/* In landscape: positions displayed as a horizontal row */
+.pos-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+  justify-content: center;
+}
+
+.pos-btn {
+  background: #0e1420; border: 1.5px solid #1c2435; border-radius: 13px;
+  padding: .65rem .9rem; color: #fff; font-size: .88rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; gap: .65rem;
+  transition: border-color .18s; min-width: 140px; flex: 1;
+}
+.pos-btn:active { background: #151e2e; }
+.pos-btn.taken { opacity: .28; pointer-events: none; }
+.pos-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.pi-blue { background: rgba(37,99,235,.18); }
+.pi-red  { background: rgba(220,38,38,.18); }
+.pos-name   { font-size:.88rem; font-weight:700; }
+.pos-status { font-size:.65rem; margin-top:.1rem; }
+.avail      { color: #16a34a; }
+.taken-lbl  { color: #dc2626; }
+
+/* ===== WAITING ===== */
+#wait { flex-direction:column; gap:1rem; text-align:center; }
+.spinner { width:40px; height:40px; border:3px solid #1a2030; border-top-color:#22c55e; border-radius:50%; animation:sp 1s linear infinite; }
+@keyframes sp { to{ transform:rotate(360deg) } }
+.wait-info { color:#6b7280; font-size:.82rem; }
+.my-card { background:#0e1420; border:1.5px solid #1c2435; border-radius:12px; padding:.65rem 1.3rem; text-align:center; }
+.my-lbl { font-size:.65rem; color:#4b5563; text-transform:uppercase; letter-spacing:1px; }
+.my-val { font-size:1.1rem; font-weight:700; color:#22c55e; margin-top:.1rem; }
+
+/* ===== CONTROLLER — full landscape layout ===== */
+#ctrl {
+  width: 100%; height: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 0;
+  z-index: 1;
+  background: #07090f;
+}
+
+/* HUD — thin strip at top, absolute */
+.ctrl-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 14px;
+  background: linear-gradient(rgba(7,9,15,.9), transparent);
+  z-index: 10;
+}
+.ctrl-id { display:flex; align-items:center; gap:.45rem; }
+.cdot { width:8px; height:8px; border-radius:50%; }
+.clbl { font-size:.78rem; font-weight:700; }
+.scoreboard {
+  display:flex; align-items:center; gap:.4rem;
+  background:#0e1420; border-radius:8px; padding:.22rem .6rem;
+}
+.sb-n    { font-size:1.2rem; font-weight:700; line-height:1; }
+.sb-blue { color:#60a5fa; }
+.sb-red  { color:#f87171; }
+.sb-sep  { color:#374151; font-size:.7rem; }
+.sb-clk  { font-size:.68rem; color:#fbbf24; font-weight:700; }
+.sb-half { font-size:.55rem; color:#4b5563; }
+
+/* ===== LEFT SIDE: Move joystick only ===== */
+.left-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding-top: 28px; /* avoid HUD overlap */
+}
+
+/* ===== RIGHT SIDE: Ball joystick + 4 action buttons ===== */
+.right-zone {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-shrink: 0;
+  padding-top: 28px;
+}
+
+/* ===== JOYSTICK ===== */
+.js-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.js-label { font-size:.55rem; color:#374151; text-transform:uppercase; letter-spacing:.4px; font-weight:700; }
+
+.js-base {
+  border-radius:50%;
+  background:#0e1420;
+  border:2px solid #1c2435;
+  position:relative;
+  touch-action:none;
+  flex-shrink:0;
+}
+.js-base::before, .js-base::after {
+  content:''; position:absolute;
+  background:rgba(255,255,255,.05);
+  pointer-events:none;
+}
+.js-base::before { width:1px; height:100%; left:50%; top:0; }
+.js-base::after  { width:100%; height:1px; left:0; top:50%; }
+
+.js-stick {
+  border-radius:50%;
+  background:#1e2d42;
+  border:2px solid #2a3f5c;
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  box-shadow:0 4px 14px rgba(0,0,0,.5);
+  transition:background .1s;
+}
+
+/* Move joystick (blue) */
+.js-base.move-js              { border-color:#2563eb44; width:140px; height:140px; }
+.js-base.move-js .js-stick    { width:54px; height:54px; }
+.js-base.move-js .js-stick.active { background:#0d1e3a; border-color:#3b82f6; }
+
+/* Ball joystick (green) */
+.js-base.ball-js              { border-color:#16a34a44; width:118px; height:118px; }
+.js-base.ball-js .js-stick    { width:44px; height:44px; }
+.js-base.ball-js .js-stick.active { background:#0a2016; border-color:#22c55e; }
+
+/* ===== ACTION BUTTONS — diamond layout on right ===== */
+.btns-diamond {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  flex-shrink: 0;
+}
+.gb {
+  position: absolute;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid #1e2b3f;
+  background: #0d1525;
+  color: #fff;
+  font-size: .65rem; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  line-height: 1.2; gap: 1px;
+  transition: filter .07s, transform .07s, border-color .1s;
+  transform: translate(-50%, -50%);
+}
+.gb:active, .gb.pressed { filter:brightness(1.7); transform:translate(-50%,-50%) scale(.89); }
+.gb .ico { font-size:1rem; }
+.gb .lbl { font-size:.48rem; color:rgba(255,255,255,.4); letter-spacing:.3px; }
+
+/* Diamond positions — all within the 130×130 box */
+/* Top    */ .gb-top    { top:  13%;  left: 50%; }
+/* Right  */ .gb-right  { top:  50%;  left: 87%; }
+/* Bottom */ .gb-bottom { top:  87%;  left: 50%; }
+/* Left   */ .gb-left   { top:  50%;  left: 13%; }
+
+/* Colors */
+.btn-tackle { border-color:#dc262688; }
+.btn-tackle.pressed { background:#2a0d0d; border-color:#dc2626; }
+
+.btn-shoot  { border-color:#f59e0b88; }
+.btn-shoot.pressed  { background:#2a1d05; border-color:#f59e0b; }
+
+.btn-pass   { border-color:#3b82f688; }
+.btn-pass.pressed   { background:#0d1e3a; border-color:#3b82f6; }
+
+.btn-lob    { border-color:#a855f788; }
+.btn-lob.pressed    { background:#1a0d2e; border-color:#a855f7; }
+
+/* ===== RESULT ===== */
+#res { flex-direction:column; text-align:center; gap:.8rem; }
+.res-ico { font-size:3.5rem; }
+.res-ttl { font-size:1.8rem; font-weight:700; color:#fbbf24; }
+.res-sc  { font-size:1.4rem; }
+</style>
+</head>
+<body>
+
+<!-- Rotate prompt for portrait -->
+<div class="rotate-msg">
+  <div class="ico">📱</div>
+  <div>Rotate your phone<br><strong>to landscape</strong> to play</div>
+</div>
+
+<!-- SELECT POSITION -->
+<div id="sel" class="screen active">
+  <div class="sel-top">
+    <div class="sel-title">Join Match 🎮</div>
+    <div class="team-tag" id="team-tag">Team</div>
+  </div>
+  <div class="sel-sub">Choose your position</div>
+  <div class="pos-list" id="pos-list"></div>
+</div>
+
+<!-- WAITING -->
+<div id="wait" class="screen">
+  <div class="my-card">
+    <div class="my-lbl">Your Position</div>
+    <div class="my-val" id="my-val">—</div>
+  </div>
+  <div class="spinner"></div>
+  <div class="wait-info">Waiting for all players…<br>Game starts automatically.</div>
+</div>
+
+<!-- CONTROLLER -->
+<div id="ctrl" class="screen">
+
+  <!-- HUD strip -->
+  <div class="ctrl-bar">
+    <div class="ctrl-id">
+      <div class="cdot" id="cdot"></div>
+      <div class="clbl" id="clbl">—</div>
+    </div>
+    <div class="scoreboard">
+      <div>
+        <div class="sb-n sb-blue" id="c-blue">0</div>
+        <div class="sb-half" id="c-half">H1</div>
+      </div>
+      <div class="sb-sep">:</div>
+      <div>
+        <div class="sb-n sb-red" id="c-red">0</div>
+        <div class="sb-clk" id="c-clk">00:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEFT: Move joystick -->
+  <div class="left-zone">
+    <div class="js-wrap">
+      <div class="js-label">MOVE</div>
+      <div class="js-base move-js" id="jsMove">
+        <div class="js-stick" id="jsStickMove"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Ball joystick + diamond buttons -->
+  <div class="right-zone">
+    <!-- Ball joystick -->
+    <div class="js-wrap">
+      <div class="js-label">BALL</div>
+      <div class="js-base ball-js" id="jsBall">
+        <div class="js-stick" id="jsStickBall"></div>
+      </div>
+    </div>
+
+    <!-- Diamond action buttons -->
+    <div class="btns-diamond">
+      <!-- Top: LOB -->
+      <button class="gb gb-top btn-lob" data-k="lob">
+        <span class="ico">🌙</span><span class="lbl">LOB</span>
+      </button>
+      <!-- Right: SHOOT -->
+      <button class="gb gb-right btn-shoot" data-k="kick">
+        <span class="ico">⚽</span><span class="lbl">SHOOT</span>
+      </button>
+      <!-- Bottom: PASS -->
+      <button class="gb gb-bottom btn-pass" data-k="pass">
+        <span class="ico">■</span><span class="lbl">PASS</span>
+      </button>
+      <!-- Left: TACKLE -->
+      <button class="gb gb-left btn-tackle" data-k="tackle">
+        <span class="ico">✕</span><span class="lbl">TACKLE</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- RESULT -->
+<div id="res" class="screen">
+  <div class="res-ico" id="r-ico">🏆</div>
+  <div class="res-ttl" id="r-ttl">Full Time</div>
+  <div class="res-sc" id="r-sc">0 — 0</div>
+</div>
+
+<script>
+const params   = new URLSearchParams(location.search);
+const myTeam   = params.get('team') || 'blue';
+const gameMode = parseInt(params.get('mode') || '1');
+
+const POSITIONS = {1:['GK'], 2:['GK','CF'], 3:['GK','LW','RW']};
+const POS_ICONS = {GK:'🥅', LW:'⬅️', RW:'➡️', CF:'⚡'};
+const POS_DESC  = {GK:'Goalkeeper', LW:'Left Wing', RW:'Right Wing', CF:'Striker'};
+
+let myPos = null;
+let inp = {
+  dx:0, dy:0,
+  ballDx:0, ballDy:0,
+  kick:false, pass:false, tackle:false,
+  boost:false, lob:false
+};
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// WebSocket connection
+let ws = null;
+function connectWS(){
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  ws.onopen = () => {
+    // nothing needed — server sends state on connect
+  };
+  ws.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if(d.type !== 'state') return;
+    const st = d.state;
+    if(document.getElementById('sel').classList.contains('active')) loadPositions(st);
+    if(st.gameStarted && myPos){ initCtrl(); show('ctrl'); }
+    if(st.score){
+      document.getElementById('c-blue').textContent = st.score.blue;
+      document.getElementById('c-red').textContent  = st.score.red;
+    }
+    if(st.gameTime !== undefined){
+      const dm = Math.min(90, st.gameTime*90/900);
+      const mm = Math.floor(dm), ss = Math.floor((dm-mm)*60);
+      document.getElementById('c-clk').textContent  = String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+      document.getElementById('c-half').textContent = 'H'+(st.period||1);
+    }
+    if(!st.gameStarted && st.gameTime >= 900) showResult(st);
+  };
+  ws.onclose = () => { setTimeout(connectWS, 2000); };
+}
+connectWS();
+
+async function api(data){
+  try{
+    if(ws && ws.readyState === 1){ ws.send(JSON.stringify(data)); }
+    else{ await fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); }
+  }catch(e){}
+}
+async function getState(){
+  try{ const r=await fetch('/api/state'); return r.json(); }catch(e){ return null; }
+}
+
+// Team label
+const ttag = document.getElementById('team-tag');
+ttag.className = 'team-tag ' + myTeam;
+ttag.textContent = myTeam==='blue' ? '🔵 Blue Team' : '🔴 Red Team';
+
+// Load positions list
+async function loadPositions(st){
+  if(!st) st = await getState();
+  const taken = st ? (st.joined[myTeam]||[]) : [];
+  const list  = document.getElementById('pos-list');
+  const iCls  = myTeam==='blue' ? 'pi-blue' : 'pi-red';
+  list.innerHTML = POSITIONS[gameMode].map(p=>{
+    const isTaken = taken.includes(p);
+    return `<button class="pos-btn${isTaken?' taken':''}" onclick="selectPos('${p}')">
+      <div class="pos-icon ${iCls}">${POS_ICONS[p]||'⚽'}</div>
+      <div>
+        <div class="pos-name">${POS_DESC[p]||p}</div>
+        <div class="pos-status ${isTaken?'taken-lbl':'avail'}">${isTaken?'Taken ✗':'Available ✓'}</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+loadPositions();
+
+async function selectPos(pos){
+  myPos = pos;
+  await api({type:'join', team:myTeam, pos});
+  document.getElementById('my-val').textContent = (POS_ICONS[pos]||'') + ' ' + (POS_DESC[pos]||pos);
+  show('wait');
+}
+
+// SSE replaced by WebSocket — handler is inside connectWS() above
+
+function showResult(st){
+  show('res');
+  const w = st.score.blue>st.score.red?'blue':st.score.red>st.score.blue?'red':'draw';
+  document.getElementById('r-ico').textContent = w==='draw'?'🤝':'🏆';
+  document.getElementById('r-ttl').textContent = w==='draw'?'Draw!':w==='blue'?'Blue Wins!':'Red Wins!';
+  document.getElementById('r-sc').textContent  = st.score.blue + ' — ' + st.score.red;
+}
+
+// ============================================================
+// CONTROLLER INIT
+// ============================================================
+let ctrlInited = false;
+function initCtrl(){
+  if(ctrlInited) return;
+  ctrlInited = true;
+  document.getElementById('cdot').style.background = myTeam==='blue'?'#2563eb':'#dc2626';
+  document.getElementById('clbl').textContent = (myTeam==='blue'?'Blue':'Red')+' · '+(POS_DESC[myPos]||myPos);
+  setupJoystick('jsMove','jsStickMove', false);
+  setupJoystick('jsBall','jsStickBall', true);
+  setupButtons();
+  setInterval(sendInput, 80);
+}
+
+function sendInput(){
+  if(!myPos || !document.getElementById('ctrl').classList.contains('active')) return;
+  api({type:'input', key:myTeam+'_'+myPos, input:{...inp}});
+}
+
+// ============================================================
+// ANALOG JOYSTICK
+// ============================================================
+function setupJoystick(baseId, stickId, isBall){
+  const base  = document.getElementById(baseId);
+  const stick = document.getElementById(stickId);
+  let mouseDown = false;
+  let activeTouchId = null;
+
+  function getMaxR(){ return base.offsetWidth/2 - stick.offsetWidth/2; }
+  function getCenter(){
+    const r = base.getBoundingClientRect();
+    return {x: r.left+r.width/2, y: r.top+r.height/2};
+  }
+  function moveTo(ex, ey){
+    const c = getCenter(), maxR = getMaxR();
+    let dx = ex-c.x, dy = ey-c.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    const cl = Math.min(dist, maxR);
+    const a  = Math.atan2(dy, dx);
+    stick.style.transform = `translate(calc(-50% + ${Math.cos(a)*cl}px), calc(-50% + ${Math.sin(a)*cl}px))`;
+    let ndx = dx/maxR, ndy = dy/maxR;
+    const len = Math.sqrt(ndx*ndx+ndy*ndy);
+    if(len>1){ndx/=len; ndy/=len;}
+    ndx = parseFloat(ndx.toFixed(3));
+    ndy = parseFloat(ndy.toFixed(3));
+    if(isBall){ inp.ballDx=ndx; inp.ballDy=ndy; }
+    else      { inp.dx=ndx; inp.dy=ndy; }
+    stick.classList.add('active');
+  }
+  function release(){
+    stick.style.transform = 'translate(-50%,-50%)';
+    if(isBall){ inp.ballDx=0; inp.ballDy=0; }
+    else      { inp.dx=0; inp.dy=0; }
+    stick.classList.remove('active');
+    activeTouchId = null;
+  }
+
+  base.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    activeTouchId = t.identifier;
+    moveTo(t.clientX, t.clientY); sendInput();
+  },{passive:false});
+
+  base.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    for(let t of e.changedTouches){
+      if(t.identifier === activeTouchId){ moveTo(t.clientX, t.clientY); sendInput(); break; }
+    }
+  },{passive:false});
+
+  base.addEventListener('touchend', e=>{
+    e.preventDefault();
+    for(let t of e.changedTouches){
+      if(t.identifier === activeTouchId){ release(); sendInput(); break; }
+    }
+  },{passive:false});
+
+  base.addEventListener('touchcancel', e=>{ e.preventDefault(); release(); sendInput(); },{passive:false});
+
+  // Mouse fallback
+  base.addEventListener('mousedown', e=>{ mouseDown=true; moveTo(e.clientX,e.clientY); sendInput(); });
+  window.addEventListener('mousemove', e=>{ if(!mouseDown)return; moveTo(e.clientX,e.clientY); sendInput(); });
+  window.addEventListener('mouseup', ()=>{ if(!mouseDown)return; mouseDown=false; release(); sendInput(); });
+}
+
+// ============================================================
+// BUTTONS
+// ============================================================
+function setupButtons(){
+  document.querySelectorAll('.gb[data-k]').forEach(el=>{
+    const key = el.getAttribute('data-k');
+    const press = ()=>{ inp[key]=true;  el.classList.add('pressed');    sendInput(); };
+    const rel   = ()=>{ inp[key]=false; el.classList.remove('pressed'); sendInput(); };
+    el.addEventListener('touchstart',  e=>{e.preventDefault(); press();}, {passive:false});
+    el.addEventListener('touchend',    e=>{e.preventDefault(); rel();},   {passive:false});
+    el.addEventListener('touchcancel', e=>{e.preventDefault(); rel();},   {passive:false});
+    el.addEventListener('mousedown',  press);
+    el.addEventListener('mouseup',    rel);
+    el.addEventListener('mouseleave', rel);
+  });
+}
+</script>
+</body>
+</html>
